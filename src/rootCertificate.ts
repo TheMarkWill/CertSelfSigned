@@ -70,7 +70,7 @@ class RootCertificate {
     const cert = forge.pki.createCertificate();
 
     cert.serialNumber = '01';
-    cert.version = 0x01;
+    cert.version = 1;
     cert.validity.notBefore = this.createdOn;
     cert.validity.notAfter = this.expiryOn;
 
