@@ -67,6 +67,7 @@ class ClientCertificate {
 
     cert.publicKey = this.keyPair.publicKey;
     cert.serialNumber = '01';
+    cert.version = 0x01;
     cert.validity.notBefore = this.now;
     cert.validity.notAfter = this.options.expiryOn;
 
