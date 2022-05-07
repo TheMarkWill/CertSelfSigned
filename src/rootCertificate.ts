@@ -29,7 +29,7 @@ class RootCertificate {
 
   public publicKey?: forge.pki.PublicKey;
 
-  constructor(options: OptionsCert | string, privateKeyInput: string) {
+  constructor(options: OptionsCert | string, privateKeyInput?: string) {
     if (options instanceof Object) {
       this.createdOn = new Date();
       if (!options.expiryOn) {
@@ -56,7 +56,7 @@ class RootCertificate {
       this.createdOn = this.cert.validity.notBefore;
       this.expiryOn = this.cert.validity.notAfter;
 
-      this.privateKey = forge.pki.privateKeyFromPem(privateKeyInput);
+      this.privateKey = forge.pki.privateKeyFromPem(privateKeyInput || '');
     }
   }
 
