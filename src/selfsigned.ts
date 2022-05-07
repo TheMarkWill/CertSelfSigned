@@ -1,2 +1,5 @@
 export { ClientCertificate } from './clientCertificate';
-export { RootCertificate } from './rootCertificate';
+export {
+  RootCertificate,
+  loadRootCertificateFromPemFile
+} from './rootCertificate';

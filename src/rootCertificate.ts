@@ -1,5 +1,4 @@
 import forge from 'node-forge';
-import os from 'os';
 import fs from 'fs';
 import path from 'path';
 
@@ -29,8 +28,23 @@ class RootCertificate {
 
   public publicKey?: forge.pki.PublicKey;
 
-  constructor(options: OptionsCert | string, privateKeyInput?: string) {
-    if (options instanceof Object) {
+  constructor(options: OptionsCert);
+
+  constructor(certificatePem: string, privateKeyPem: string);
+
+  constructor(
+    certificatePem: string,
+    privateKeyPem: string,
+    publicKeyPem?: string
+  );
+
+  constructor(
+    optionsOrCertPem: OptionsCert | string,
+    privateKeyPem?: string,
+    publicKeyPem?: string
+  ) {
+    if (optionsOrCertPem instanceof Object) {
+      const options = optionsOrCertPem;
       this.createdOn = new Date();
       if (!options.expiryOn) {
         options.expiryOn = new Date(
@@ -51,12 +65,14 @@ class RootCertificate {
 
       this.cert = cert;
     } else {
-      this.cert = forge.pki.certificateFromPem(options);
+      const certPem = optionsOrCertPem;
+      this.cert = forge.pki.certificateFromPem(certPem);
 
       this.createdOn = this.cert.validity.notBefore;
       this.expiryOn = this.cert.validity.notAfter;
 
-      this.privateKey = forge.pki.privateKeyFromPem(privateKeyInput || '');
+      this.privateKey = forge.pki.privateKeyFromPem(privateKeyPem || '');
+      this.publicKey = forge.pki.publicKeyFromPem(publicKeyPem || '');
     }
   }
 
@@ -69,6 +85,8 @@ class RootCertificate {
   private generateCert(options: OptionsCert) {
     const cert = forge.pki.createCertificate();
 
+    // To generate as created a keyPar, in this case have public key instanced
+    cert.publicKey = this.publicKey as forge.pki.PublicKey;
     cert.serialNumber = '01';
     cert.version = 1;
     cert.validity.notBefore = this.createdOn;
@@ -78,47 +96,29 @@ class RootCertificate {
     const subject = [
       {
         name: 'commonName',
-        value: options?.subject?.commonName || os.hostname()
+        value: options?.subject?.commonName || 'None'
       },
       {
         name: 'countryName',
-        value: options?.subject?.countryName || 'US'
+        value: options?.subject?.countryName || 'None'
       },
       {
         name: 'stateOrProvinceName',
-        value: options?.subject?.stateName || 'Georgia'
+        value: options?.subject?.stateName || 'None'
       },
       {
         name: 'localityName',
-        value: options?.subject?.locality || 'Atlanta'
+        value: options?.subject?.locality || 'None'
       },
       {
         name: 'organizationName',
         value: options?.subject?.orgName || 'None'
       },
-      { shortName: 'OU', value: options?.subject?.shortName || 'example' }
+      { shortName: 'OU', value: options?.subject?.shortName || 'None' }
     ];
 
     cert.setIssuer(subject);
     cert.setSubject(subject);
-
-    cert.setExtensions([
-      {
-        name: 'basicConstraints',
-        cA: true
-      },
-      {
-        name: 'keyUsage',
-        keyCertSign: true,
-        digitalSignature: true,
-        nonRepudiation: true,
-        keyEncipherment: true,
-        dataEncipherment: true
-      },
-      {
-        name: 'subjectKeyIdentifier'
-      }
-    ]);
 
     cert.sign(this.privateKey);
 
@@ -128,8 +128,8 @@ class RootCertificate {
   public certToString() {
     return {
       cert: forge.pki.certificateToPem(this.cert),
-      publicKey: this.publicKey && forge.pki.publicKeyToPem(this.publicKey),
-      privateKey: forge.pki.privateKeyToPem(this.privateKey)
+      privateKey: forge.pki.privateKeyToPem(this.privateKey),
+      publicKey: this.publicKey && forge.pki.publicKeyToPem(this.publicKey)
     };
   }
 
@@ -154,4 +154,18 @@ class RootCertificate {
   }
 }
 
-export { RootCertificate };
+function loadRootCertificateFromPemFile(
+  certPathPem: string,
+  privateKeyPathPem: string,
+  publicKeyPathPem?: string
+): RootCertificate {
+  const cert = fs.readFileSync(certPathPem).toString();
+  const privateKey = fs.readFileSync(privateKeyPathPem).toString();
+  const publicKey = publicKeyPathPem
+    ? fs.readFileSync(publicKeyPathPem).toString()
+    : undefined;
+
+  return new RootCertificate(cert, privateKey, publicKey);
+}
+
+export { RootCertificate, loadRootCertificateFromPemFile };

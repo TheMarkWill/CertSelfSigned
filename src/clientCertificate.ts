@@ -1,5 +1,4 @@
 import forge from 'node-forge';
-import os from 'os';
 import fs from 'fs';
 import path from 'path';
 import { RootCertificate } from './rootCertificate';
@@ -75,47 +74,29 @@ class ClientCertificate {
     const subject = [
       {
         name: 'commonName',
-        value: this.options?.subject?.commonName || os.hostname()
+        value: this.options?.subject?.commonName || 'None'
       },
       {
         name: 'countryName',
-        value: this.options?.subject?.countryName || 'US'
+        value: this.options?.subject?.countryName || 'None'
       },
       {
         name: 'stateOrProvinceName',
-        value: this.options?.subject?.stateName || 'Georgia'
+        value: this.options?.subject?.stateName || 'None'
       },
       {
         name: 'localityName',
-        value: this.options?.subject?.locality || 'Atlanta'
+        value: this.options?.subject?.locality || 'None'
       },
       {
         name: 'organizationName',
         value: this.options?.subject?.orgName || 'None'
       },
-      { shortName: 'OU', value: this.options?.subject?.shortName || 'example' }
+      { shortName: 'OU', value: this.options?.subject?.shortName || 'None' }
     ];
 
     cert.setSubject(subject);
     cert.setIssuer(this.rootCA.cert.subject.attributes);
-
-    cert.setExtensions([
-      {
-        name: 'basicConstraints',
-        cA: true
-      },
-      {
-        name: 'keyUsage',
-        keyCertSign: true,
-        digitalSignature: true,
-        nonRepudiation: true,
-        keyEncipherment: true,
-        dataEncipherment: true
-      },
-      {
-        name: 'subjectKeyIdentifier'
-      }
-    ]);
 
     cert.sign(this.rootCA.privateKey);
 
